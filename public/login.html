@@ -29,7 +29,7 @@
       <h3>Login</h3>
       <form id="loginForm" class="feedback-card">
         <label for="email">Email</label><br>
-        <input type="email" id="email" placeholder="Email" required><br><br>
+        <input type="text" id="email" placeholder="Email" required><br><br>
 
         <label for="password">Password</label><br>
         <input type="password" id="password" placeholder="Password" required><br><br>
@@ -49,10 +49,10 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
-      const res = await fetch('http://localhost:5000/login', {
+      const res = await fetch('http://localhost:3001/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ username: email, password })
       });
 
       const data = await res.json();
@@ -61,7 +61,7 @@
         alert('Login successful! Redirecting to history...');
         window.location.href = 'history.html';
       } else {
-        alert(data.message || 'Login failed. Please try again.');
+        alert(data.error || 'Login failed. Please try again.');
       }
     });
   </script>

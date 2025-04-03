@@ -3,8 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const path = require('path');
-const fs = require('fs');
+const mongoose = require('mongoose');
 
 // Load environment variables
 dotenv.config();
@@ -14,21 +13,39 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Create necessary files if they don't exist
-const usersFile = 'users.json';
-const workoutHistoryFile = 'workout_history.json';
+// MongoDB connection with detailed error logging
+console.log('Attempting to connect to MongoDB...');
+mongoose.connect('mongodb://127.0.0.1:27017/formsense')
+.then(() => {
+    console.log('Successfully connected to MongoDB');
+})
+.catch(err => {
+    console.error('MongoDB connection error:', err);
+    console.error('Full error details:', JSON.stringify(err, null, 2));
+});
 
-if (!fs.existsSync(usersFile)) {
-    fs.writeFileSync(usersFile, JSON.stringify([]));
-}
+// Add connection error handler
+mongoose.connection.on('error', err => {
+    console.error('MongoDB connection error:', err);
+});
 
-if (!fs.existsSync(workoutHistoryFile)) {
-    fs.writeFileSync(workoutHistoryFile, JSON.stringify([]));
-}
+// User Schema
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
+});
 
-// Load users and workout history
-let users = JSON.parse(fs.readFileSync(usersFile));
-let workoutHistory = JSON.parse(fs.readFileSync(workoutHistoryFile));
+const User = mongoose.model('User', userSchema);
+
+// Workout History Schema
+const workoutSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    exercise: { type: String, required: true },
+    score: { type: Number, required: true },
+    date: { type: Date, required: true }
+});
+
+const Workout = mongoose.model('Workout', workoutSchema);
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -69,37 +86,46 @@ app.post('/api/correct-pose', async (req, res) => {
     }
 });
 
-// User registration
+// User registration with detailed error logging
 app.post('/api/register', async (req, res) => {
     try {
+        console.log('Registration attempt with data:', {
+            username: req.body.username,
+            passwordLength: req.body.password ? req.body.password.length : 0
+        });
+
         const { username, password } = req.body;
 
         if (!username || !password) {
+            console.log('Missing required fields');
             return res.status(400).json({ error: 'Username and password are required' });
         }
 
         // Check if user already exists
-        if (users.find(u => u.username === username)) {
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            console.log('Username already exists:', username);
             return res.status(400).json({ error: 'Username already exists' });
         }
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log('Password hashed successfully');
 
         // Create new user
-        const newUser = {
-            id: users.length + 1,
+        const user = new User({
             username,
             password: hashedPassword
-        };
+        });
 
-        users.push(newUser);
-        fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+        await user.save();
+        console.log('User saved successfully:', username);
 
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
-        console.error('Error registering user:', error);
-        res.status(500).json({ error: 'Failed to register user' });
+        console.error('Registration error:', error);
+        console.error('Full error details:', JSON.stringify(error, null, 2));
+        res.status(500).json({ error: 'Failed to register user: ' + error.message });
     }
 });
 
@@ -113,7 +139,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Find user
-        const user = users.find(u => u.username === username);
+        const user = await User.findOne({ username });
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -126,7 +152,7 @@ app.post('/api/login', async (req, res) => {
 
         // Generate token
         const token = jwt.sign(
-            { id: user.id, username: user.username },
+            { id: user._id, username: user.username },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '24h' }
         );
@@ -139,10 +165,10 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Get workout history
-app.get('/api/workout-history', authenticateToken, (req, res) => {
+app.get('/api/workout-history', authenticateToken, async (req, res) => {
     try {
-        const userHistory = workoutHistory.filter(workout => workout.userId === req.user.id);
-        res.json(userHistory);
+        const workouts = await Workout.find({ userId: req.user.id });
+        res.json(workouts);
     } catch (error) {
         console.error('Error getting workout history:', error);
         res.status(500).json({ error: 'Failed to get workout history' });
@@ -150,7 +176,7 @@ app.get('/api/workout-history', authenticateToken, (req, res) => {
 });
 
 // Save workout
-app.post('/api/workout-history', authenticateToken, (req, res) => {
+app.post('/api/workout-history', authenticateToken, async (req, res) => {
     try {
         const { exercise, score, date } = req.body;
 
@@ -158,18 +184,15 @@ app.post('/api/workout-history', authenticateToken, (req, res) => {
             return res.status(400).json({ error: 'Exercise, score, and date are required' });
         }
 
-        const newWorkout = {
-            id: workoutHistory.length + 1,
+        const workout = new Workout({
             userId: req.user.id,
             exercise,
             score,
-            date
-        };
+            date: new Date(date)
+        });
 
-        workoutHistory.push(newWorkout);
-        fs.writeFileSync(workoutHistoryFile, JSON.stringify(workoutHistory, null, 2));
-
-        res.status(201).json(newWorkout);
+        await workout.save();
+        res.status(201).json(workout);
     } catch (error) {
         console.error('Error saving workout:', error);
         res.status(500).json({ error: 'Failed to save workout' });
@@ -182,7 +205,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something broke!' });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Access the application at http://localhost:${PORT}`);

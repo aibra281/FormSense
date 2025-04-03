@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": 1,
+    "username": "aa",
+    "password": "$2a$10$2WNqv7M3swqVvPpERuoH4.TsVw3MKjBTvUjpfhe0P5mc3oH8eFZUa"
+  },
+  {
+    "id": 2,
+    "username": "asd",
+    "password": "$2a$10$O3o1tATJXKtjMuvsiEgfCutfQrgln79S5OXuEpvqoltxDGdk6yx6i"
+  },
+  {
+    "id": 3,
+    "username": "qdas",
+    "password": "$2a$10$OStlAJIN1q4N1NehA90NbOboZ9tqKYfBtUMyOAQ3hV6I27abYHhIG"
+  }
+]
