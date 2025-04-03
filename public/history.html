@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your History - FormSense AI</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="logo-container">
+      <img src="logo.webp" alt="Stylized dumbbell with AI pose skeleton - FormSense AI logo" class="logo" />
+      <h1>FormSense AI</h1>
+    </div>
+    <nav role="navigation">
+      <a href="index.html">Home</a>
+      <a href="history.html">History</a>
+      <a href="log-workout.html">Log Workout</a>
+      <a href="login.html">Login</a>
+      <a href="register.html">Register</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="webcam-section">
+      <h3>Exercise History</h3>
+      <div class="feedback-card">
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>Workout Name</th>
+              <th>Form Score</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="3">Loading history...</td></tr>
+          </tbody>
+        </table>
+        <div class="cta-buttons" style="margin-top: 20px;">
+          <button class="cta-button" onclick="exportTableToExcel('historyTable')">Export to Excel</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 FormSense AI | Track and improve your progress</p>
+  </footer>
+
+  <script>
+    async function loadHistory() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('You are not logged in. Redirecting to login...');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/history', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = '';
+
+        if (!data.history || data.history.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="3">No workout history found.</td></tr>';
+          return;
+        }
+
+        data.history.forEach(entry => {
+          const row = `<tr>
+              <td>${entry.workoutName}</td>
+              <td>${entry.formScore}</td>
+              <td>${entry.date}</td>
+          </tr>`;
+          tableBody.innerHTML += row;
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="3">Failed to load history.</td></tr>';
+      }
+    }
+
+    function exportTableToExcel(tableID) {
+      const table = document.getElementById(tableID);
+      const workbook = XLSX.utils.table_to_book(table, { sheet: "Workout History" });
+      XLSX.writeFile(workbook, "workout_history.xlsx");
+    }
+
+    loadHistory();
+  </script>
+</body>
+
+</html>

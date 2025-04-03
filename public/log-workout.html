@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log Workout - FormSense AI</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+  <!-- TF.js models -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+  <!-- MediaPipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+
+  <!-- Custom script -->
+  <script src="app.js" defer></script>
+  
+  <style>
+    .rep-counter-container {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #00ff00;
+      padding: 15px;
+      border-radius: 10px;
+      z-index: 1000;
+      font-size: 24px;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+      transition: transform 0.2s;
+    }
+    
+    .rep-counter-container.highlight {
+      transform: scale(1.2);
+    }
+    
+    .reset-reps-button {
+      position: absolute;
+      top: 80px;
+      left: 20px;
+      background-color: #ff4444;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 1000;
+    }
+    
+    .reset-reps-button:hover {
+      background-color: #ff0000;
+    }
+    
+    .camera-container {
+      position: relative;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo-container">
+      <img src="logo.webp" alt="FormSense AI Logo" class="logo" />
+      <h1>FormSense AI</h1>
+    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="history.html">History</a>
+      <a href="log-workout.html" class="active">Log Workout</a>
+      <a href="login.html">Login</a>
+      <a href="register.html">Register</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="webcam-section">
+      <h3>Log Your Workout</h3>
+      <div class="camera-container">
+        <video class="input_video"></video>
+        <canvas class="output_canvas" width="640" height="480"></canvas>
+        
+      </div>
+      <div id="predictionBox">🧠 Waiting for model...</div>
+      <div id="feedbackEmoji" style="font-size: 32px; margin: 10px 0;">🤖</div>
+
+      <form id="logForm" class="feedback-card">
+        <label for="exerciseSelect">Select Exercise</label><br>
+        <input list="exerciseList" id="exerciseSelect" placeholder="Start typing..." required />
+        <datalist id="exerciseList"></datalist><br><br>
+
+        <label for="workoutName">Detected Exercise</label><br>
+        <input type="text" id="workoutName" placeholder="Exercise Name" required readonly><br><br>
+        
+        <label for="repCount">Rep Count</label><br>
+        <input type="number" id="repCount" placeholder="Rep Count" required readonly><br><br>
+
+        <label for="date">Date</label><br>
+        <input type="date" id="date" required><br><br>
+
+        <button type="submit" class="cta-button">Save Workout</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 FormSense AI | Keep tracking your workouts for improvement</p>
+  </footer>
+  
+  <script>
+    // Update rep count in the form when it changes
+    document.addEventListener('DOMContentLoaded', function() {
+      const repCounterDisplay = document.getElementById('repCounterDisplay');
+      const repCountInput = document.getElementById('repCount');
+      const resetRepsButton = document.getElementById('resetRepsButton');
+      
+      // Create a MutationObserver to watch for changes to the rep counter display
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'characterData' || mutation.type === 'childList') {
+            const repText = repCounterDisplay.textContent;
+            const repCount = parseInt(repText.match(/\d+/)[0]);
+            repCountInput.value = repCount;
+          }
+        });
+      });
+      
+      // Start observing the rep counter display
+      observer.observe(repCounterDisplay, { 
+        characterData: true, 
+        childList: true, 
+        subtree: true 
+      });
+      
+      // Reset reps button functionality
+      resetRepsButton.addEventListener('click', function() {
+        const currentExercise = document.getElementById('workoutName').value.toLowerCase();
+        if (window.repStates && window.repStates[currentExercise]) {
+          window.repStates[currentExercise].count = 0;
+          window.repStates[currentExercise].lastPosition = null;
+          window.repStates[currentExercise].direction = 'up';
+          window.updateRepCounterDisplay();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

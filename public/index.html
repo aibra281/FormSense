@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FormSense AI</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <header>
+    <div class="logo-container">
+      <img src="logo.webp" alt="Stylized dumbbell with AI pose skeleton - FormSense AI logo" class="logo" />
+      <h1>FormSense AI</h1>
+    </div>
+    <nav role="navigation">
+      <a href="index.html">Home</a>
+      <a href="history.html">History</a>
+      <a href="log-workout.html">Log Workout</a>
+      <a href="login.html">Login</a>
+      <a href="register.html">Register</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>Your Intelligent Workout Partner</h2>
+      <p>Get real-time feedback on your exercise form and improve your fitness safely and effectively.</p>
+      <div class="cta-buttons">
+        <a href="login.html" class="cta-button">Login</a>
+        <a href="register.html" class="cta-button secondary">Register</a>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="video-container">
+        <video class="input_video"></video>
+        <canvas class="output_canvas"></canvas>
+      </div>
+      <div class="controls">
+        <select id="exerciseSelect" class="exercise-select">
+          <option value="">Select Exercise</option>
+        </select>
+        <input type="text" id="exerciseList" list="exerciseList" placeholder="Search exercise...">
+        <datalist id="exerciseList"></datalist>
+        <div id="exerciseConfidence" class="confidence-display"></div>
+        <div id="predictionBox" class="prediction-box"></div>
+        <input type="number" id="formScore" class="form-score" readonly>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 FormSense AI | Designed for safe and smart fitness</p>
+  </footer>
+</body>
+
+</html>

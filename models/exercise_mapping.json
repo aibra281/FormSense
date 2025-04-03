@@ -1,0 +1,12 @@
+{
+  "bicep_curls": 0,
+  "dumbbell_rows": 1,
+  "dumbbell_shoulder_press": 2,
+  "jumping_jacks": 3,
+  "lateral_shoulder_raises": 4,
+  "lunges": 5,
+  "pushups": 6,
+  "situps": 7,
+  "squats": 8,
+  "tricep_extensions": 9
+}
